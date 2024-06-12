@@ -45,12 +45,49 @@ exports.signUp = async (req, res) => {
     try {
         const { email, password } = req.body;
         // Check if the email is already registered
-        const existingUser = await user.findOne({ email });
-        if (existingUser) {
-          return res.status(400).json({ message: 'Email already exists' });
+        const body = new URLSearchParams();
+        body.append('client_id', 'admin-cli');
+        body.append('grant_type', 'password');
+        body.append('username', "admin");
+        body.append('password', "admin");
+        try {
+            const response = await axios.post(
+                'http://auth:8080/realms/master/protocol/openid-connect/token', body
+            );
+            var admin_token = response.data.access_token;
+            console.log({ message:'Password is correct', admin_token });
         }
-        // Create a new user
-        await user.create({ email, password }); // Use create function
+        catch(error){
+            console.error('Error:', error);
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        const reqbody = new URLSearchParams();
+        body.append('client_id', 'admin-cli');
+        body.append('grant_type', 'password');
+        body.append('username', email);
+        body.append('password', password);
+        try {
+            const response = await axios.post(
+                'http://auth:8080/admin/realms/testrealm/users', {
+                    enabled: true,
+                    email: email,
+                    username: email,
+                    emailVerified: "",
+                    credentials: [{
+                        type: "password",
+                        value: password,
+                        temporary: false
+                    }]
+                }, {headers: {Authorization: `Bearer ${admin_token}`}}
+            );
+            return res.status(201).json({ message: 'User created' });
+        }
+        catch(error){
+            console.error('Error:', error);
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
         return res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
         console.error('Error:', error);
