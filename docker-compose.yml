@@ -1,0 +1,28 @@
+version: '3'
+services:
+  backend:
+    build: ./server
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend-db
+      - auth
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+
+  backend-db:
+    image: mongo
+    ports:
+      - "27017:27017"
+    
+  auth:
+    image: keycloak/keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+    ports:
+      - "8080:8080"
